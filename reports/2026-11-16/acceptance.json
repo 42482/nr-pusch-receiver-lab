@@ -1,0 +1,124 @@
+{
+  "status": "verified",
+  "source_hashes": {
+    "src/fm_receiver/__init__.py": "4485f7b8ee6d49698fdf261249518ce6da185a57358a7bf3840d32696a9c29b0",
+    "src/fm_receiver/builders.py": "b9aa6a86dcf9b06a215e8519b42c09047d0f86ff34cbcce2a94e82f271880f26",
+    "src/fm_receiver/channels.py": "a2bc5d29bd5401dce53bd0359b4819a987cffab5fb7d00139cd799ab23c36244",
+    "src/fm_receiver/cli.py": "213d966a5d8ba120fc225cfa62d33a0c12e314e7a7a35c0e77e9473193fcf8f8",
+    "src/fm_receiver/config.py": "bfe3d44375039d9b10d9a242287f06f3bac77f719d97e151c7adb4a5825b30ed",
+    "src/fm_receiver/data/__init__.py": "a671ea8bf0f95aa52f4193e1063fb75f2bc533f2cdeab5ffaaf38d596c5fab6a",
+    "src/fm_receiver/data/export.py": "61fa7c2dd67341085314b56daa45522b4469238725a407ee3d86196d0f7b7eaa",
+    "src/fm_receiver/data/schema.py": "83684b6d91394e6fac8c08beec69e4fe328bc229057e1f449aeed3fbbe72e137",
+    "src/fm_receiver/decoders/__init__.py": "cd0d9aa41f2fcb20d9b9181cc1ff742e4892d84f0664a6dd21eb7a0771026f80",
+    "src/fm_receiver/decoders/tb.py": "33cf21d3ffc51cd1060138a4a0ebfbbc489b616f910c8f7319cb2a51b2431385",
+    "src/fm_receiver/e2e_model.py": "6ed38fe9930ffefc113e654f755c748bec98c7727421ef8ec0b3f559075ac141",
+    "src/fm_receiver/evaluation/__init__.py": "14395fc49e072831aa102e65e428bad4085fa842035c70f19c499fb59ad30b45",
+    "src/fm_receiver/evaluation/artifacts.py": "f0ee7ffbd2f61ad80845b4048990526b8a607e6559986b0092b311ca894e1fda",
+    "src/fm_receiver/evaluation/comparison.py": "8ca63a3eff322359063897f8fc355ffd8c58885e9cb95cb0891f459b16de0dc8",
+    "src/fm_receiver/evaluation/metrics.py": "79ef2213d5d5fb78445f7a578b39fec8f4151ab6cf97d477e5eb9f6e880fa947",
+    "src/fm_receiver/evaluation/runner.py": "60a80250707748622f5e3da2c0f92956308030d2a9e8ce12f5beebb47bf24b3f",
+    "src/fm_receiver/hardware/__init__.py": "63a87a357b3f8cda1008adde3f3b51b69076561d3ebf18b6da97f8689c60bb90",
+    "src/fm_receiver/hardware/capture.py": "5adc762fdf252f8e53ed94991ce1a349ae3d627bafab90ec565dc083e734d798",
+    "src/fm_receiver/models/__init__.py": "41242a132e765edb332a355ec8151835c3d1116b734ea1fec4c6c9d6f9c166a5",
+    "src/fm_receiver/models/gecct.py": "93816df467f59dfc877fc556dd621b47863cc145e23a0858bccb8bc29362472b",
+    "src/fm_receiver/models/outer.py": "795df74a29e10daa8d2f34f83bd16a1f4fcc02fa1d013363d0e62ba45ed1ff7e",
+    "src/fm_receiver/orchestration/__init__.py": "67da8237f0d4ab91658976b34838d41de0d7b8019e2b723adeef131ddaf12eed",
+    "src/fm_receiver/orchestration/pipeline.py": "69ccb104df26a1e4bee84ae1dba856471a59a5943d9b4d4e276acd2dbd2904ee",
+    "src/fm_receiver/orchestration/transport.py": "4fe41e344da01caee585dfc34c3089c9b35945930c7bc13b085357606d46af9e",
+    "src/fm_receiver/orchestration/worker.py": "592be424130045be463527d476a150c52d7653e5e88da41fd96dfd238ca91a20",
+    "src/fm_receiver/paths.py": "46003265ab87cf28d20345a55ecab3fc3ff35845b5fbfbb561c10a73a6f05a20",
+    "src/fm_receiver/receivers/__init__.py": "583df244414e069527be33ff3ad48e81beb6d9ebd251d2e51d5334f0ad5e530b",
+    "src/fm_receiver/receivers/baseline.py": "4d4b27de1deb1391dbdee7d37dfc5413f8f42c9cfea4ee8a4fe3f1c12562e976",
+    "src/fm_receiver/receivers/neural.py": "1de2879d67888c2680194f7a1f958b8c32eebb702711a3baa03acc7055b83906",
+    "src/fm_receiver/runtime.py": "b256d0eb72cc0d98f29a28a0f2ffa11c9ad7cb9ecfa9b4d3430f445b986d0ead",
+    "src/fm_receiver/sionna_adapter.py": "b95215be67744e5c33376c8de6e1b5f3be57035d9637f736b059b3f2b9104455",
+    "src/fm_receiver/training/__init__.py": "7727852db42f17528e49f0021570d2e8b24d8a56e49d0b617e76ff853f6d5002",
+    "src/fm_receiver/training/checkpoint.py": "b1214f9555366ee66582e1971a22c71dd549fdf392ff711ba7547d31b27b0221",
+    "src/fm_receiver/training/engine.py": "3a8b5bc9c794502bd35c041d09797edbf99b961b0cc0644d3d58a1bd69cfbe75",
+    "scripts/compare.py": "2ce495c26bd080d5f3afd4c1e790472cf0cdeba7fbd5fd7b237e4503aaad4f7c",
+    "scripts/evaluate.py": "47ab1a879f0d26cc0638c33fe9bb337ee7e91af4078a84b3943b6a2b71bf8002",
+    "scripts/export_env.sh": "331f6fd1bb4f6b822722331865442b5a707d5f3c36b10d618c9921c107090a3a",
+    "scripts/export_samples.py": "4293aa8f096b19af207df50a7e79d89543c4e907aa170c64ee3273e72077c5a8",
+    "scripts/pipeline.py": "efb2e205402f7fbf31eca44614ad192a518d59bc34d805bcf96ac79053f17f60",
+    "scripts/run_pipeline.sh": "4d3f167c4285900e4778752fbe309fe732e05baef343f7c7db5a9678f4778ddf",
+    "scripts/setup_env.sh": "e06452a62adeddd7a11635756012474c8efdee5849f4c9a8416370d4db0cc53f",
+    "scripts/train.py": "0038968bc2bd2ce0b980dd7b0ddae6670963834a0d86b54467cb3433447ec2ad",
+    "scripts/validate_tdl.py": "1bba83bca5e119a3da8e2a998bc06e236ef5776a1efbe2e3818bacdcba19602e",
+    "scripts/x410_offline.py": "805ad5f109c9d683b75d25953319a9f62d853dc9eeb18ad754003c622697a124",
+    "pyproject.toml": "1b61e28ab947d2e9c3e547b7f335fa85efd4aac2bc8e259b7c3b90b1629e0522",
+    "environment.yml": "515025db2ab45e12143248c5a951b144095f84120907109e9783817d0706da3c",
+    "requirements.lock.txt": "02dd287a7ead632ab6c310dbb4392e987c0d57a60e22a7397a999c30ba856d81",
+    "conda-linux-64.lock": "241300b7bb5f88d426314f0c9dfe877f1a9a0f3875b9b8fbe6bdf00da3a44f92",
+    "config/b0.toml": "b3a2ab7645168a8110112201a362db3cc9cfe4e4a37a9d36fe92456dbb523a50",
+    "config/b0_tdl.toml": "43d74f1c67a537d064ed85d6611bc9c4eaef90a812c554490c291be3b8c933a0",
+    "config/screenrc": "7d924825de50b8e223999c87aea25a7f3a83596266122710fb0dea4248a36df0",
+    "config/workers.example.toml": "ad8637b9fb2e4de204810571116236ebe94ea10fa6eed74e3646249d1496e9d8"
+  },
+  "script_sha256": "933d16ef14ebf48985e2cbb90a2fbb2586e1cd7633330e8868fc9f67bdfc6da1",
+  "rows": 108,
+  "checkpoints": {
+    "train_outer_42": {
+      "last_step": 20000,
+      "best_step": 19250,
+      "status": "completed",
+      "sha256": "c842cf07cd4892665cc8204780f510f6f929795262e5a8d335e66ecee37fc15c"
+    },
+    "train_decoder_42": {
+      "last_step": 9250,
+      "best_step": 7250,
+      "status": "early_stopped",
+      "sha256": "b6f53d1a3fd6e9e2c4b975e65175a6cf70926ea04691919635f0e85d272761d7"
+    },
+    "joint_42": {
+      "last_step": 2750,
+      "best_step": 750,
+      "status": "early_stopped",
+      "sha256": "a6e7254c4694baaa888b68c07d26d1f746c45483f6408caeabf358b70fa6e9a4"
+    },
+    "train_outer_43": {
+      "last_step": 16250,
+      "best_step": 14250,
+      "status": "early_stopped",
+      "sha256": "ea630ea5ccfc22d2a600af28406cd4868066c641ed59222d1d468d1815e09860"
+    },
+    "train_decoder_43": {
+      "last_step": 7500,
+      "best_step": 5500,
+      "status": "early_stopped",
+      "sha256": "d1ad898c9b0f2d01d91330ac39c2e2f3afb0a00943c6db894ec1d05482caa7b9"
+    },
+    "joint_43": {
+      "last_step": 5000,
+      "best_step": 4000,
+      "status": "completed",
+      "sha256": "fbf5a05bdea7e6f7d83d6506b836deceaf9466bb7ec22baca628a6d28ba17da7"
+    }
+  },
+  "pointwise_bler_comparisons": {
+    "42": {
+      "b1_vs_b0": {
+        "lower": 6,
+        "equal": 12,
+        "higher": 0
+      },
+      "b2_vs_b1": {
+        "lower": 0,
+        "equal": 8,
+        "higher": 10
+      }
+    },
+    "43": {
+      "b1_vs_b0": {
+        "lower": 6,
+        "equal": 12,
+        "higher": 0
+      },
+      "b2_vs_b1": {
+        "lower": 0,
+        "equal": 8,
+        "higher": 10
+      }
+    }
+  },
+  "performance_improvement_assumed": false
+}

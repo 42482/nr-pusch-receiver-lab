@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fm-receiver"
+version = "0.1.0"
+description = "Reproducible small-scale NR PUSCH receiver experiments"
+requires-python = ">=3.11"
+dependencies = [
+  "torch==2.11.0",
+  "sionna-no-rt==2.2.0",
+  "numpy>=2.2.6",
+  "matplotlib>=3.10.8",
+  "h5py==3.16.0",
+]
+
+[project.scripts]
+pusch-evaluate = "fm_receiver.cli:evaluate_main"
+pusch-export = "fm_receiver.cli:export_main"
+
+[tool.setuptools.packages.find]
+where = ["src"]

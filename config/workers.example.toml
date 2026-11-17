@@ -1,0 +1,14 @@
+# Copy to workers.local.toml and fill deployment-specific addresses/paths.
+[[workers]]
+name = "controller"
+host = "local"
+root = "/data8t/Users/jiayl/Receiver"
+expected_gpus = 1
+
+[[workers]]
+name = "worker"
+host = "worker.example"
+user = "jiayl"
+port = 22
+root = "/data8t/Users/jiayl/Receiver-worker"
+expected_gpus = 3

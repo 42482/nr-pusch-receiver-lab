@@ -1,0 +1,53 @@
+[system]
+num_tx = 1
+num_layers = 1
+num_tx_ant = 1
+num_rx_ant = 1
+n_size_bwp = 4
+num_ofdm_symbols = 14
+subcarrier_spacing_khz = 15
+cyclic_prefix = "normal"
+precoding = "non-codebook"
+mcs_table = 1
+mcs_index = 9
+n_cell_id = 1
+n_rnti = 1
+slot_number = 0
+frame_number = 0
+
+[dmrs]
+mapping_type = "A"
+config_type = 1
+type_a_position = 2
+length = 1
+additional_position = 0
+port = 0
+num_cdm_groups_without_data = 2
+n_scid = 0
+
+[receiver]
+interpolation = "lin"
+equalizer = "lmmse"
+demapping = "maxlog"
+num_bp_iter = 20
+cn_update = "boxplus-phi"
+precision = "single"
+
+[runtime]
+device = "cuda:0"
+seed = 42
+cpu_threads = 4
+
+[evaluation]
+batch_size = 16
+passthrough_tbs = 256
+receiver_noise_floor = 1e-6
+snr_db = [-4.0, -2.0, 0.0, 2.0, 4.0, 6.0, 8.0]
+min_tbs = 256
+max_tbs = 4096
+target_block_errors = 100
+
+[samples]
+num_frames = 64
+snr_db = 2.0
+seed = 43

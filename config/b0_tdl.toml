@@ -1,0 +1,11 @@
+# Frozen first-round system/DMRS/receiver defaults; explicit TDL-A scenario.
+[channel]
+kind = "tdl-a"
+delay_spread_s = 1e-7
+carrier_frequency_hz = 3.5e9
+speed_mps = 3.0
+normalize = true
+spec_version = "19.2"
+
+[evaluation]
+snr_db = [-4.0, -2.0, 0.0, 2.0, 4.0, 6.0, 8.0, 10.0, 12.0]

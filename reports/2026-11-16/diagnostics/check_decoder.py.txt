@@ -1,0 +1,85 @@
+#!/usr/bin/env python3
+"""Truth-assisted diagnosis only; these results are not receiver benchmarks."""
+
+from dataclasses import replace
+import fcntl
+import hashlib
+import json
+import os
+from pathlib import Path
+
+RUN = Path(__file__).resolve().parents[1]
+ROOT = RUN.parents[2]
+
+
+def main():
+    from fm_receiver.runtime import prepare_cache, seed_all
+    prepare_cache(ROOT)
+    import torch
+    from fm_receiver.config import load_config
+    from fm_receiver.e2e_model import E2EModel
+    from fm_receiver.sionna_adapter import CodingAdapter, soft_detect
+    from fm_receiver.evaluation.comparison import read_networks
+    from fm_receiver.training.checkpoint import source_hashes
+
+    resource = os.environ["CUDA_VISIBLE_DEVICES"]
+    with (ROOT / ".cache/locks" / (resource + ".lock")).open("a") as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        config = load_config(ROOT / "config/b0.toml")
+        config = replace(config, runtime=replace(config.runtime, device="cuda:0"))
+        report = {"kind": "truth_assisted_diagnostic", "formal_performance_test": False,
+                  "source_hashes": source_hashes(ROOT), "test_seed": 90000000,
+                  "frames_per_training_seed": 16, "rows": [], "checkpoint_sha256": {}}
+        for seed in (42, 43):
+            seed_all(90000000, "cuda:0", 4)
+            model = E2EModel(config, "cuda:0", 90000000)
+            codec = CodingAdapter(model.components.adapter.encoder, model.components.receiver.decoder)
+            paths = {name: RUN / "jobs" / f"{name}_{seed}" / "output/best.pt"
+                     for name in ("train_outer", "train_decoder", "joint")}
+            for name, path in paths.items():
+                report["checkpoint_sha256"][f"{name}_{seed}"] = hashlib.sha256(path.read_bytes()).hexdigest()
+            outer, _ = read_networks(paths["train_outer"], model, codec, "cuda:0", ROOT)
+            _, pretrained = read_networks(paths["train_decoder"], model, codec, "cuda:0", ROOT)
+            joint_outer, joint_inner = read_networks(paths["joint"], model, codec, "cuda:0", ROOT)
+            with torch.inference_mode():
+                batch = model.generate(16, "awgn", 12.)
+                target = codec.code_labels(batch.labels.tb_bits)
+                tb_oracle, crc_oracle = codec.to_tb((2 * target - 1) * 20)
+                assert torch.equal(tb_oracle, batch.labels.tb_bits) and bool(crc_oracle.all())
+                h, _ = model.components.receiver.channel_estimator(batch.observation.y, batch.observation.no)
+                llrs = {"oracle_mapper": (2 * batch.labels.mapper_bits - 1) * 20,
+                        "traditional_awgn_12db": soft_detect(model.components, batch.observation)[0],
+                        "b1_outer_awgn_12db": outer(batch.observation, h),
+                        "joint_outer_awgn_12db": joint_outer(batch.observation, h)}
+                for input_name, llr in llrs.items():
+                    bp_bits, bp_crc = model.components.receiver.decoder(llr)
+                    for decoder_name, decoder in (("pretrained", pretrained), ("joint", joint_inner)):
+                        code_llr = codec.to_code_llr(llr)
+                        decoded, _ = decoder(code_llr, codec)
+                        mistakes = (decoded > 0) != target.bool()
+                        bits, crc = codec.to_tb(decoded)
+                        fill = decoded.clone()
+                        punctures = slice(codec.sent, codec.sent + codec.punctured)
+                        fill[:, punctures] = (2 * target[:, punctures] - 1) * 20
+                        filled_bits, filled_crc = codec.to_tb(fill)
+                        report["rows"].append({
+                            "training_seed": seed, "input": input_name, "decoder": decoder_name,
+                            "code_errors_transmitted": int(mistakes[:, :codec.sent].sum()),
+                            "code_errors_punctured": int(mistakes[:, punctures].sum()),
+                            "code_bits_transmitted": len(target) * codec.sent,
+                            "code_bits_punctured": len(target) * codec.punctured,
+                            "tb_bit_errors": int((bits != batch.labels.tb_bits).sum()),
+                            "tb_block_errors": int((bits != batch.labels.tb_bits).any(-1).sum()),
+                            "crc_failures": int((~crc.bool()).sum()),
+                            "tb_bit_errors_after_oracle_puncture_fill": int((filled_bits != batch.labels.tb_bits).sum()),
+                            "crc_failures_after_oracle_puncture_fill": int((~filled_crc.bool()).sum()),
+                            "same_input_bp_bit_errors": int((bp_bits != batch.labels.tb_bits).sum()),
+                            "same_input_bp_crc_failures": int((~bp_crc.bool()).sum())})
+            del model, codec, outer, pretrained, joint_outer, joint_inner
+        output = RUN / "diagnostics/decoder_diagnostic.json"
+        output.write_text(json.dumps(report, indent=2) + "\n")
+        print(output, flush=True)
+
+
+if __name__ == "__main__":
+    main()

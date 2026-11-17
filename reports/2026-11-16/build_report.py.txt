@@ -1,0 +1,211 @@
+#!/usr/bin/env python3
+"""Validate this frozen run and export its measured comparison results."""
+
+import argparse
+import csv
+import fcntl
+import hashlib
+import json
+import math
+import os
+from pathlib import Path
+import time
+
+RUN = Path(__file__).resolve().parents[1]
+ROOT = RUN.parents[2]
+OUTPUT = RUN / "report"
+
+
+def read(path):
+    return json.loads(path.read_text())
+
+
+def write(path, value):
+    temporary = path.with_suffix(path.suffix + ".tmp")
+    temporary.write_text(json.dumps(value, indent=2) + "\n")
+    os.replace(temporary, path)
+
+
+def sha(path):
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def require(condition, message):
+    if not condition:
+        raise ValueError(message)
+
+
+def summarize(state):
+    from fm_receiver.training.checkpoint import source_hashes
+    import torch
+
+    frozen = state["source_hashes"]
+    require(source_hashes(ROOT) == frozen, "Frozen source changed")
+    tdl = read(RUN / "jobs/tdl/output/manifest.json")
+    require(tdl.get("gpu_accepted") is True, "TDL GPU gate missing")
+    checkpoints = {}
+    rows = []
+    for seed in (42, 43):
+        for stage in ("outer", "decoder"):
+            manifest = read(RUN / f"jobs/overfit_{stage}_{seed}/output/manifest.json")
+            validation = manifest.get("validation", {})
+            require(manifest.get("overfit_passed") is True
+                    and validation.get("total_blocks") == 64
+                    and all(validation.get(k) == 0 for k in
+                            ("bit_errors", "block_errors", "crc_failures")),
+                    f"Missing zero-error gate: {stage}/{seed}")
+        for name, stage in ((f"train_outer_{seed}", "outer"),
+                            (f"train_decoder_{seed}", "decoder"),
+                            (f"joint_{seed}", "joint")):
+            directory = RUN / "jobs" / name / "output"
+            manifest = read(directory / "manifest.json")
+            require(manifest.get("formal_training") is True
+                    and manifest["status"] in ("completed", "early_stopped"),
+                    f"Formal training incomplete: {name}")
+            checkpoint = torch.load(directory / "best.pt", map_location="cpu", weights_only=False)
+            require(checkpoint["source_hashes"] == frozen
+                    and checkpoint["signature"]["seed"] == seed
+                    and checkpoint["signature"]["stage"] == stage,
+                    f"Checkpoint provenance mismatch: {name}")
+            checkpoints[name] = {"last_step": manifest["step"], "best_step": checkpoint["step"],
+                                 "status": manifest["status"], "sha256": sha(directory / "best.pt")}
+        directory = RUN / f"jobs/compare_{seed}/output"
+        manifest = read(directory / "manifest.json")
+        require(manifest["status"] == "completed" and manifest.get("paired_observations") is True,
+                f"Comparison incomplete: {seed}")
+        identity = manifest["identity"]
+        require(identity["source_hashes"] == frozen
+                and identity["checkpoints"]["outer"] == checkpoints[f"train_outer_{seed}"]["sha256"]
+                and identity["checkpoints"]["joint"] == checkpoints[f"joint_{seed}"]["sha256"]
+                and identity["min_tbs"] == 256 and identity["max_tbs"] == 4096,
+                f"Comparison provenance/budget mismatch: {seed}")
+        values = read(directory / "metrics.json")
+        expected = {(channel, snr, receiver) for channel in ("awgn", "tdl-a")
+                    for snr in range(-4, 13, 2) for receiver in ("b0", "b1", "b2")}
+        require(len(values) == 54 and {(v["channel"], v["snr_db"], v["receiver"])
+                                     for v in values} == expected,
+                f"Comparison coverage mismatch: {seed}")
+        for channel in ("awgn", "tdl-a"):
+            for snr in range(-4, 13, 2):
+                paired = [v for v in values if v["channel"] == channel and v["snr_db"] == snr]
+                require(len({v["input_sha256"] for v in paired}) == 1
+                        and len({v["total_blocks"] for v in paired}) == 1,
+                        f"Unpaired observations: {seed}/{channel}/{snr}")
+                for value in paired:
+                    n = value["total_blocks"]
+                    require(256 <= n <= 4096 and value["total_bits"] == 848 * n,
+                            "Unexpected sample/bit count")
+                    for errors, total, rate in (("bit_errors", "total_bits", "ber"),
+                                                ("block_errors", "total_blocks", "bler")):
+                        require(0 <= value[errors] <= value[total]
+                                and math.isclose(value[rate], value[errors] / value[total], abs_tol=1e-12),
+                                f"Invalid {rate} counts")
+                    require(0 <= value["crc_failures"] <= n, "Invalid CRC counts")
+                require(paired[0]["total_blocks"] == 4096
+                        or all(v["block_errors"] >= 100 for v in paired),
+                        "Adaptive stopping rule not met")
+        rows.extend({"training_seed": seed, **value} for value in values)
+    with (OUTPUT / "metrics_all.csv").open("w") as stream:
+        writer = csv.DictWriter(stream, fieldnames=list(rows[0]))
+        writer.writeheader()
+        writer.writerows(rows)
+    import matplotlib.pyplot as plt
+    figure, axes = plt.subplots(2, 2, figsize=(12, 8), sharex=True, sharey=True)
+    for index, seed in enumerate((42, 43)):
+        for column, channel in enumerate(("awgn", "tdl-a")):
+            axis = axes[index, column]
+            for receiver in ("b0", "b1", "b2"):
+                points = sorted([v for v in rows if v["training_seed"] == seed
+                                 and v["channel"] == channel and v["receiver"] == receiver],
+                                key=lambda v: v["snr_db"])
+                axis.semilogy([v["snr_db"] for v in points],
+                              [v["bler"] if v["block_errors"] else 1 / v["total_blocks"]
+                               for v in points], "o-", label=receiver.upper())
+                zero = [v for v in points if v["block_errors"] == 0]
+                if zero:
+                    axis.scatter([v["snr_db"] for v in zero], [1 / v["total_blocks"] for v in zero],
+                                 marker="v", zorder=5)
+            axis.set(title=f"{channel.upper()}, training seed {seed}",
+                     xlabel="Data-symbol Es/N0 (dB)", ylabel="TB BLER")
+            axis.grid(True, which="both", alpha=.3)
+            axis.legend()
+    figure.suptitle("Paired observations; triangles: zero observed errors displayed at 1/N")
+    figure.tight_layout()
+    figure.savefig(OUTPUT / "bler_all.png", dpi=180)
+    figure.savefig(OUTPUT / "bler_all.pdf")
+    plt.close(figure)
+    text = ["# 两种子同观测评估", "",
+            "固定源码、两个训练种子、AWGN/TDL-A 各 9 个信噪比点。每点 256–4096 TB；"
+            "同一种子和场景内，B0/B1/B2 的输入哈希和样本数均已核对。", "",
+            "零错误表示本次未观察到错误；图中以 1/N 和倒三角标示，不代表真实误块率为零。"
+            "两个训练种子的结果分别报告，不将重复测试帧合并为独立样本。", "",
+            "[完整计数 CSV](metrics_all.csv) · [BLER PNG](bler_all.png) · [BLER PDF](bler_all.pdf)", ""]
+    comparisons = {}
+    for seed in (42, 43):
+        text += [f"## 训练种子 {seed}", "",
+                 "| 信道 | Es/N0 (dB) | TB 数 | B0 BLER | B1 BLER | B2 BLER |",
+                 "| --- | ---: | ---: | ---: | ---: | ---: |"]
+        counts = {"b1_vs_b0": {"lower": 0, "equal": 0, "higher": 0},
+                  "b2_vs_b1": {"lower": 0, "equal": 0, "higher": 0}}
+        for channel in ("awgn", "tdl-a"):
+            for snr in range(-4, 13, 2):
+                values = {v["receiver"]: v for v in rows if v["training_seed"] == seed
+                          and v["channel"] == channel and v["snr_db"] == snr}
+                text.append(f"| {channel} | {snr} | {values['b0']['total_blocks']} | "
+                            + " | ".join(f"{values[name]['bler']:.6g}" for name in ("b0", "b1", "b2")) + " |")
+                for key, left, right in (("b1_vs_b0", "b1", "b0"), ("b2_vs_b1", "b2", "b1")):
+                    difference = values[left]["bler"] - values[right]["bler"]
+                    counts[key]["lower" if difference < 0 else "higher" if difference > 0 else "equal"] += 1
+        comparisons[str(seed)] = counts
+        text += ["", "逐点实测 BLER 比较（低／相同／高；不代表统计显著性）：", ""]
+        for key, counts in counts.items():
+            text.append(f"- {key}: {counts['lower']} / {counts['equal']} / {counts['higher']}")
+        text.append("")
+    text += ["## 解释范围", "",
+             "固定帧门限验证能学习正确排列，正式训练结束验证训练流程；性能由以上独立测试计数决定。"
+             "G-ECCT 或联合模型可能弱于传统译码器，不能将训练成功视作性能提升。", "",
+             "运行同时存在其他 GPU 任务，未做隔离延迟基准；此报告不宣称速度优势。"
+             "X410 仅有模拟 IQ 离线接口验证，尚未进行射频实采。", ""]
+    (OUTPUT / "SUMMARY.md").write_text("\n".join(text))
+    write(OUTPUT / "acceptance.json", {"status": "verified", "source_hashes": frozen,
+          "script_sha256": sha(Path(__file__)), "rows": len(rows), "checkpoints": checkpoints,
+          "pointwise_bler_comparisons": comparisons, "performance_improvement_assumed": False})
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--wait", action="store_true")
+    args = parser.parse_args()
+    from fm_receiver.runtime import prepare_cache
+    prepare_cache(ROOT)
+    OUTPUT.mkdir(exist_ok=True)
+    with (OUTPUT / "report.lock").open("a") as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        status = {"status": "starting", "pid": os.getpid(), "started_epoch": time.time()}
+        try:
+            while True:
+                state = read(RUN / "state.json")
+                status.update(status="waiting_for_pipeline", heartbeat_epoch=time.time(),
+                              jobs={name: job["status"] for name, job in state["jobs"].items()})
+                write(OUTPUT / "state.json", status)
+                if state["status"] == "completed":
+                    require(all(j["status"] == "completed" for j in state["jobs"].values()),
+                            "Pipeline contains incomplete jobs")
+                    break
+                require(args.wait and state["status"] in ("running", "preflighting"),
+                        f"Pipeline is {state['status']}; inspect jobs before reporting")
+                time.sleep(20)
+            status.update(status="building_report", heartbeat_epoch=time.time())
+            write(OUTPUT / "state.json", status)
+            summarize(state)
+            status.update(status="completed", heartbeat_epoch=time.time())
+            write(OUTPUT / "state.json", status)
+            print(f"Verified report: {OUTPUT / 'SUMMARY.md'}", flush=True)
+        except BaseException as exc:
+            status.update(status="failed", error=str(exc), heartbeat_epoch=time.time())
+            write(OUTPUT / "state.json", status)
+            raise
+
+
+if __name__ == "__main__":
+    main()

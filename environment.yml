@@ -1,0 +1,14 @@
+name: fm-receiver
+channels:
+  - https://repo.anaconda.com/pkgs/main
+  - nodefaults
+dependencies:
+  - python=3.11.15
+  - pip=26.1.2
+  - pip:
+      - -r requirements.lock.txt
+      - -e .
+variables:
+  PYTHONNOUSERSITE: "1"
+# Conda platform packages: conda-linux-64.lock
+# Python project packages: requirements.lock.txt, followed by this checkout.
