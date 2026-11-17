@@ -8,7 +8,7 @@
 - 流程状态（本地 `results/pipelines/20261116T134137/state.json`）和[报告验收](reports/2026-11-16/acceptance.json)。
 - [G-ECCT 补充诊断](reports/2026-11-16/diagnostics/NOTES.md)。
 - [X410 接口与准备清单](docs/X410_INTERFACE.md)：离线 IQ 适配已验证，尚未射频实采。
-- 本轮冻结源码、锁文件和测试另存于运行目录 `frozen_source.tar.gz`，文件哈希见 `frozen_source_manifest.json`；不含个人环境、缓存或 SSH 认证信息。
+- 原始核心源码已保存为 Git 标签 `frozen-20261116`；本轮冻结源码、锁文件和测试另存于运行目录 `frozen_source.tar.gz`，文件哈希见 `frozen_source_manifest.json`；不含个人环境、缓存或 SSH 认证信息。
 
 ## 已完成的验证
 
@@ -55,5 +55,7 @@
 4. X410 继续依据接口清单核对设备、时钟、采样率、同步和事件记录；当前软件验证不等于已完成真实采集。
 
 本轮固定帧检查曾因默认 1000 步不足而需要续训，复现时应按记录允许 decoder 检查到 4000 步。
-比较入口的 `--resume` 在配置 JSON 序列类型规范化方面仍需后续维护验证；本轮两次正式比较均从头完成，不依赖该路径。
+发布前复查的 `v0.1.1` 已修复比较 `--resume` 的 JSON 序列规范化和恢复时旧主控 PID 的误确认，新增两个回归检查，最新共 24 项测试全部通过。
+新版本流水线固定帧检查上限设为 4000 步，达到既有门限即提前结束；历史实验原始计数保持不变。
+GitHub 发布入口为 `bash scripts/publish_github.sh`，默认创建私有的 `nr-pusch-receiver-lab`；首次需要浏览器账号授权，目前尚未上传。
 后续若修改核心源码，应另立版本并保留本轮源码归档；检查点默认要求相同冻结源码，不应静默改写其来源哈希。

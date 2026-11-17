@@ -43,6 +43,8 @@ def compare(config, device, output, root, outer_path, joint_path, batch_size=16,
                                 for k, v in {"outer": outer_path, "joint": joint_path}.items()},
                 "device": device, "batch_size": batch_size, "min_tbs": min_tbs,
                 "max_tbs": max_tbs}
+    # Use the same representation before and after writing a JSON manifest.
+    identity = json.loads(json.dumps(identity))
     if resume and (output / "manifest.json").exists():
         old = json.loads((output / "manifest.json").read_text())
         if old["identity"] != identity:

@@ -1,4 +1,4 @@
-# FM-Receiver：首轮传统 PUSCH 基线
+# NR PUSCH Receiver Lab
 
 本项目先实现 B0：**NR PUSCH 发射 → 直通／AWGN → LS 与线性插值 → LMMSE 与软解调 → TB 译码**。
 工程分工参考 [NVlabs/neural_rx](https://github.com/NVlabs/neural_rx)；实现采用 PyTorch 和 Sionna 2.2。
@@ -11,6 +11,8 @@
 [接续记录](IMPLEMENTATION_STATUS.md)说明下一轮研究与源码版本约定。
 后台运行与接续见 [EXPERIMENTS.md](docs/EXPERIMENTS.md)，
 实测接入契约见 [X410_INTERFACE.md](docs/X410_INTERFACE.md)。
+同伴拉取、版本选择和首次上传见 [协作说明](docs/COLLABORATION.md)。
+当前 `v0.1.1` 已通过 24 项测试；历史实验对应 `frozen-20261116` 标签。
 
 ## 克隆、独立 Conda 环境与运行
 
@@ -19,8 +21,8 @@
 NVIDIA 驱动；GPU 硬件和宿主机驱动由运行机器提供。CPU 检查使用同一软件环境。
 
 ```bash
-git clone <仓库地址> fm-receiver
-cd fm-receiver
+git clone <仓库地址> nr-pusch-receiver-lab
+cd nr-pusch-receiver-lab
 bash scripts/setup_env.sh
 conda activate ./.conda/fm-receiver
 python -m unittest discover -s tests -t . -v

@@ -12,7 +12,8 @@ TDL-A GPU 验收及 B1/G-ECCT 两种子的固定帧门限通过，独立训练�
 此次任务无需再次执行 `start`、`resume` 或 `recovery/start.sh`。
 
 以下命令供新实验参考。首轮 G-ECCT 在默认 1000 步未通过固定帧检查，续训到 1250/1150 步才通过；
-复现该门限可使用独立的 `train.py --stage decoder --overfit --steps 4000`，已有检查点加 `--resume`。
+`v0.1.1` 流水线已将过拟合检查上限设为 4000 步，原门限保持不变、通过即停。
+独立检查可使用 `train.py --stage decoder --overfit --steps 4000`，已有检查点加 `--resume`。
 新增源码版本应保留本轮 `frozen_source.tar.gz` 和模型来源，不覆盖原输出。
 
 ## 环境与目录

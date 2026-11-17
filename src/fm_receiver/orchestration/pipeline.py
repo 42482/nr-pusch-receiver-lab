@@ -160,7 +160,7 @@ def job_argv(root, run_id, name, job, remaining_hours, smoke=False):
                      "--seed", str(job["seed"]), "--output", str(output),
                      "--max-hours", str(min(8., remaining_hours))]
     if job.get("overfit") and not smoke:
-        args += ["--overfit", "--eval-interval", "50"]
+        args += ["--overfit", "--eval-interval", "50", "--steps", "4000"]
     if job["stage"] == "joint":
         args += ["--outer-checkpoint", str(base / f"train_outer_{job['seed']}/output/best.pt"),
                  "--inner-checkpoint", str(base / f"train_decoder_{job['seed']}/output/best.pt")]
@@ -409,6 +409,8 @@ def main(argv=None):
                 job["kind"] == "compare" and (run / "jobs" / name / "output/manifest.json").exists())
         state["started_epoch"] = time.time()
         state["max_hours"] = args.max_hours
+        state.pop("controller_pid", None)
+        state.pop("heartbeat_epoch", None)
     socket_dir = ROOT / ".cache/screen"
     socket_dir.mkdir(parents=True, exist_ok=True, mode=0o700)
     socket_dir.chmod(0o700)

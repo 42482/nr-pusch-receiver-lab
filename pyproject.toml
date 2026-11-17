@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "fm-receiver"
-version = "0.1.0"
+version = "0.1.1"
 description = "Reproducible small-scale NR PUSCH receiver experiments"
 requires-python = ">=3.11"
 dependencies = [
